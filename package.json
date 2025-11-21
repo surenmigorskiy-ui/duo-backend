@@ -2,6 +2,10 @@
   "name": "duo-backend",
   "version": "1.0.0",
   "description": "Backend for Duo Finance",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/surenmigorskiy-ui/duo-backend.git"
+  },
   "main": "index.js",
   "type": "commonjs",
   "scripts": {
