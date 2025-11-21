@@ -1,0 +1,7 @@
+runtime: nodejs20
+env: standard
+instance_class: F1
+
+# Environment variables are set via Google Cloud Console
+# Go to: App Engine > Settings > Environment Variables
+# Or use: gcloud app deploy with --set-env-vars flag
