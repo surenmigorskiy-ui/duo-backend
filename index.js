@@ -5,7 +5,8 @@ require('./config/firebase'); // <-- Первым делом запускаем 
 // Проверка критических переменных окружения
 console.log('=== Проверка переменных окружения ===');
 console.log('JWT_SECRET:', process.env.JWT_SECRET ? 'установлен' : 'НЕ УСТАНОВЛЕН!');
-console.log('GEMINI_API_KEY:', process.env.GEMINI_API_KEY ? 'установлен' : 'НЕ УСТАНОВЛЕН!');
+console.log('OPENAI_API_KEY:', process.env.OPENAI_API_KEY ? 'установлен' : 'НЕ УСТАНОВЛЕН!');
+console.log('GEMINI_API_KEY:', process.env.GEMINI_API_KEY ? 'установлен (резервный)' : 'НЕ УСТАНОВЛЕН!');
 console.log('PORT:', process.env.PORT || 8080);
 
 const express = require('express');
@@ -28,6 +29,7 @@ app.use(cors({
       'https://duo-frontend-r3k39ys57-suren-migorskiys-projects.vercel.app',
       'https://expense-app-1c549.web.app',
       'http://localhost:3000',
+      'http://localhost:3002',
       'http://localhost:5173',
       'http://localhost:5174'
     ];
