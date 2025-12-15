@@ -193,12 +193,74 @@ router.post('/parse-receipt', auth, upload.single('image'), async (req, res) => 
       }
     const input = req.file.buffer.toString('base64');
 
+    const prompt = `Проанализируй это изображение чека и извлеки финансовую информацию.
+
+Категории: ${categories}
+
+Верни ТОЛЬКО JSON в формате:
+{
+  "amount": число (сумма транзакции),
+  "category": "категория из списка или null",
+  "date": "YYYY-MM-DD" (дата транзакции),
+  "time": "HH:MM" (время транзакции из чека, если указано),
+  "description": "описание транзакции"
+}
+
+ВАЖНО:
+- Если дата не указана или указан только день/месяц без года, используй текущую дату (${new Date().getFullYear()} год)
+- Если год не указан на чеке, ВСЕГДА используй ${new Date().getFullYear()} год (текущий год)
+- Если на чеке написано "сегодня" или "today" - используй текущую дату: ${new Date().toISOString().split('T')[0]}
+- time: ОБЯЗАТЕЛЬНО извлеки время транзакции из чека, если оно указано (формат HH:MM, например "14:30", "09:15")
+- Если время не указано на чеке, верни null для поля time
+- Верни ТОЛЬКО валидный JSON, без дополнительного текста`;
+
     const result = await model.generateContent([
       { inlineData: { mimeType: req.file.mimetype, data: input } },
-      `Категории: ${categories}`
+      prompt
     ]);
 
-    res.json(JSON.parse(result.response.text()));
+    const responseText = result.response.text();
+    console.log('Ответ от AI для parse-receipt:', responseText);
+    
+    // Парсим JSON из ответа
+    let parsedResponse;
+    try {
+      // Пробуем найти JSON в ответе
+      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        parsedResponse = JSON.parse(jsonMatch[0]);
+      } else {
+        parsedResponse = JSON.parse(responseText);
+      }
+      
+      console.log('Распарсенные данные:', parsedResponse);
+      
+      // Убеждаемся, что время в правильном формате
+      if (parsedResponse.time && typeof parsedResponse.time === 'string') {
+        // Проверяем формат времени HH:MM
+        const timeMatch = parsedResponse.time.match(/(\d{1,2}):(\d{2})/);
+        if (timeMatch) {
+          const hours = parseInt(timeMatch[1]);
+          const minutes = parseInt(timeMatch[2]);
+          if (hours >= 0 && hours < 24 && minutes >= 0 && minutes < 60) {
+            parsedResponse.time = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+            console.log('Время нормализовано:', parsedResponse.time);
+          } else {
+            console.warn('Некорректное время:', parsedResponse.time);
+            parsedResponse.time = null;
+          }
+        } else {
+          console.warn('Время не в формате HH:MM:', parsedResponse.time);
+          parsedResponse.time = null;
+        }
+      }
+      
+      res.json(parsedResponse);
+    } catch (parseError) {
+      console.error('Ошибка парсинга JSON:', parseError);
+      console.error('Ответ AI:', responseText);
+      res.status(500).json({ error: "Ошибка при парсинге ответа от AI" });
+    }
   } catch (error) {
     console.error("Ошибка в /parse-receipt:", error);
     res.status(500).json({ error: "Ошибка при анализе чека" });
@@ -800,6 +862,8 @@ ${patterns ? `Паттерны из истории транзакций поль
 - time: ОБЯЗАТЕЛЬНО извлеки время транзакции из скриншота (формат HH:MM, например "05:00", "14:30")
 - Если дата не указана или указан только день/месяц без года, используй текущую дату (${new Date().getFullYear()} год)
 - Если год не указан на изображении, ВСЕГДА используй ${new Date().getFullYear()} год (текущий год)
+- Если на изображении написано "сегодня", "today", "сейчас" или "now" - ВСЕГДА используй текущую дату: ${new Date().toISOString().split('T')[0]} (сегодня ${new Date().getDate()}.${String(new Date().getMonth() + 1).padStart(2, '0')}.${new Date().getFullYear()})
+- Если на изображении написано "сегодня", "today", "сейчас" или "now" - ВСЕГДА используй текущую дату: ${new Date().toISOString().split('T')[0]} (сегодня ${new Date().getDate()}.${String(new Date().getMonth() + 1).padStart(2, '0')}.${new Date().getFullYear()})
 - Определи тип (expense/income) по контексту
 - category: КРИТИЧЕСКИ ВАЖНО - используй ТОЛЬКО точные названия из списка категорий ИЛИ "UNKNOWN".
   * ГЛАВНОЕ ПРАВИЛО: Если в описании транзакции есть только банковские термины (UZUMBANK, UZCARD, VISA, "to", перевод) БЕЗ указания товара/услуги/назначения - ВСЕГДА верни "UNKNOWN"
