@@ -27,6 +27,7 @@ app.use(cors({
     const allowedOrigins = [
       'https://duo-frontend-indol.vercel.app',
       'https://duo-frontend-r3k39ys57-suren-migorskiys-projects.vercel.app',
+      'https://duo-frontend-ok6jqi1q5-suren-migorskiys-projects.vercel.app',
       'https://expense-app-1c549.web.app',
       'http://localhost:3000',
       'http://localhost:3002',
@@ -34,7 +35,7 @@ app.use(cors({
       'http://localhost:5174'
     ];
     
-    // Проверяем, является ли origin поддоменом vercel.app
+    // Проверяем, является ли origin поддоменом vercel.app (разрешаем все vercel.app домены)
     const isVercelApp = origin.includes('.vercel.app');
     
     if (allowedOrigins.indexOf(origin) !== -1 || isVercelApp) {
