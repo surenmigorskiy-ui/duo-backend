@@ -2,6 +2,9 @@ runtime: nodejs20
 env: standard
 instance_class: F1
 
-# Environment variables are set via Google Cloud Console
+# Environment variables MUST be set via Google Cloud Console
 # Go to: App Engine > Settings > Environment Variables
-# Or use: gcloud app deploy with --set-env-vars flag
+# Required variables:
+#   - JWT_SECRET
+#   - GEMINI_API_KEY (optional, for AI features)
+#   - OPENAI_API_KEY (optional, for AI features)
